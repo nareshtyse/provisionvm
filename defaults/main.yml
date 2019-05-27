@@ -1,0 +1,19 @@
+---
+# defaults file for ansible-vmware-vm-create
+ansible_vmware_vm_create_state: poweredon
+ansible_vmware_vm_create_vcenter_fqdn: 172.26.128.172
+ansible_vmware_vm_create_vcenter_datacenter: Brackley
+ansible_vmware_vm_create_vcenter_cluster: "Factory v6.5 Tier 2"
+ansible_vmware_vm_create_disk_provision_type: thin
+ansible_vmware_vm_create_host_num_cpu_cores_per_socket: 1
+ansible_vmware_vm_create_host_hotadd_cpu: True
+ansible_vmware_vm_create_host_hotremove_cpu: True
+ansible_vmware_vm_create_host_hotadd_memory: True
+ansible_vmware_vm_create_network_name: "F-Server_VL83"
+ansible_vmware_vm_create_ip: "{{ ansible_host }}"
+ansible_vmware_vm_create_dns_server_primary: "172.26.13.39"
+ansible_vmware_vm_create_dns_server_secondary: "172.26.30.213"
+ansible_vmware_vm_create_cluster: Factory v6.5 Tier 2
+ansible_vmware_vm_create_host_datastore: F-TIER2-flashblade-pmdc
+ansible_vmware_vm_create_vspherehost: 172.26.128.172
+ansible_vmware_vm_create_network_type: dhcp

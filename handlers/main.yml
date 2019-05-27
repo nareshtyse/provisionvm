@@ -1,0 +1,14 @@
+---
+# handlers file for ansible-vmware-vm-create
+
+- name: manage dns record
+  nsupdate:
+    server: 172.26.13.39
+    zone: barf1.com
+    value: "{{ instance_vm_facts.instance.hw_eth0.ipaddresses.0 if ansible_vmware_vm_create_state == 'poweredon' else '' }}"
+    type: A
+    state: "{{ 'present' if ansible_vmware_vm_create_state == 'poweredon' else 'absent' }}"
+    record: "{{ ansible_vmware_vm_create_hostname }}"
+  delegate_to: localhost
+
+

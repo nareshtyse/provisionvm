@@ -1,0 +1,4 @@
+---
+
+ansible_vmware_vm_create_folder: "Factory VMs/CFD/Unprotected"
+ansible_vmware_vm_create_network_name: "F-Server_VL06"

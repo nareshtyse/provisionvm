@@ -1,0 +1,6 @@
+---
+# vars file for s(mall) vm's
+
+ansible_vmware_vm_create_host_disk_size: 100
+ansible_vmware_vm_create_host_memory_mb: 16384
+ansible_vmware_vm_create_host_num_cpus: 8

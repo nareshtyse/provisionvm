@@ -1,0 +1,149 @@
+---
+# tasks file for ansible-vmware-vm-create
+- name: include the correct vars file based on os type of guest and size
+  include_vars:
+    file: "{{ item }}"
+  loop:
+    - "os/{{ ansible_vmware_vm_create_ostype }}.yml"
+    - "os/{{ ansible_vmware_vm_create_ostype }}-secret.yml"
+    - "vmsize/{{ ansible_vmware_vm_create_vmsize }}.yml"
+    - "department/{{ ansible_vmware_vm_create_department }}.yml"
+
+- name: get facts from vm when it needs to be absent in order to delete dns record
+  vmware_guest_facts:
+    datacenter: "{{ ansible_vmware_vm_create_vcenter_datacenter }}"
+    hostname: "{{ ansible_vmware_vm_create_vcenter_fqdn }}"
+    username: "{{ ansible_vmware_vm_create_vcenter_username }}"
+    password: "{{ ansible_vmware_vm_create_vcenter_password }}"
+    validate_certs: false
+    folder: "{{ ansible_vmware_vm_create_folder }}"
+    name: "{{ ansible_vmware_vm_create_hostname }}"
+  when: ansible_vmware_vm_create_state == "absent"
+  register: instance_vm_facts
+  ignore_errors: true
+  delegate_to: localhost
+
+- name: Create a Virtual Machine on a given ESXi host with dhcp network # I really tried https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html#omitting-parameters but it doesn't work
+  vmware_guest:
+    hostname: "{{ ansible_vmware_vm_create_vcenter_fqdn }}"
+    username: "{{ ansible_vmware_vm_create_vcenter_username }}"
+    password: "{{ ansible_vmware_vm_create_vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ ansible_vmware_vm_create_vcenter_datacenter }}"
+    cluster: "{{ ansible_vmware_vm_create_vcenter_cluster }}"
+    folder: "{{ ansible_vmware_vm_create_folder }}"
+    name: "{{ ansible_vmware_vm_create_hostname }}"
+    state: "{{ ansible_vmware_vm_create_state }}"
+    force: true
+    template: "{{ ansible_vmware_vm_create_template }}"
+    disk:
+    - size_gb: "{{ ansible_vmware_vm_create_host_disk_size }}"
+      type: "{{ ansible_vmware_vm_create_disk_provision_type }}"
+      datastore: "{{ ansible_vmware_vm_create_host_datastore }}"
+    hardware:
+      memory_mb: "{{ ansible_vmware_vm_create_host_memory_mb }}"
+      num_cpus: "{{ ansible_vmware_vm_create_host_num_cpus }}"
+      num_cpu_cores_per_socket: "{{ ansible_vmware_vm_create_host_num_cpu_cores_per_socket }}"
+      hotadd_cpu: "{{ ansible_vmware_vm_create_host_num_cpus }}"
+      hotremove_cpu: "{{ ansible_vmware_vm_create_host_num_cpus }}"
+      hotadd_memory: "{{ ansible_vmware_vm_create_host_hotadd_memory }}"
+      version: 13
+      scsi: paravirtual
+    networks:
+    - name: "{{ ansible_vmware_vm_create_network_name }}"
+      type: "{{ ansible_vmware_vm_create_network_type }}"
+      wait_for_ip_address: yes
+    customization:
+      hostname: "{{ ansible_vmware_vm_create_hostname }}"
+    #   joindomain: "{{ domain_name }}"
+    #   domainadmin: "{{ domain_admin_username }}"
+    #   domainadminpassword: "{{ domain_admin_password }}"
+    #   fullname: "Authorised User"
+      orgname: Mercedes-Benz Grand Prix Ltd
+    #   productid: "{{ windows_productid }}"
+    #   autologon: yes
+      dns_servers:
+      - "{{ ansible_vmware_vm_create_dns_server_primary }}"
+      - "{{ ansible_vmware_vm_create_dns_server_secondary }}"
+    #   domain: "{{domain_name}}"
+      password: "{{ ansible_vmware_vm_create_local_admin_password }}"
+      runonce:
+      - "{{ ansible_vmware_vm_create_runonce }}"
+  delegate_to: localhost
+  register: deploydhcp
+  when: ansible_vmware_vm_create_network_type == "dhcp"
+  notify: manage dns record
+
+- name: Create a Virtual Machine on a given ESXi host with static ip
+  vmware_guest:
+    hostname: "{{ ansible_vmware_vm_create_vcenter_fqdn }}"
+    username: "{{ ansible_vmware_vm_create_vcenter_username }}"
+    password: "{{ ansible_vmware_vm_create_vcenter_password }}"
+    validate_certs: false
+    datacenter: "{{ ansible_vmware_vm_create_vcenter_datacenter }}"
+    cluster: "{{ ansible_vmware_vm_create_vcenter_cluster }}"
+    folder: "{{ ansible_vmware_vm_create_folder }}"
+    name: "{{ ansible_vmware_vm_create_hostname }}"
+    state: "{{ ansible_vmware_vm_create_state }}"
+    force: true
+    template: "{{ ansible_vmware_vm_create_template }}"
+    disk:
+    - size_gb: "{{ ansible_vmware_vm_create_host_disk_size }}"
+      type: "{{ ansible_vmware_vm_create_disk_provision_type }}"
+      datastore: "{{ ansible_vmware_vm_create_host_datastore }}"
+    hardware:
+      memory_mb: "{{ ansible_vmware_vm_create_host_memory_mb }}"
+      num_cpus: "{{ ansible_vmware_vm_create_host_num_cpus }}"
+      num_cpu_cores_per_socket: "{{ ansible_vmware_vm_create_host_num_cpu_cores_per_socket }}"
+      hotadd_cpu: "{{ ansible_vmware_vm_create_host_num_cpus }}"
+      hotremove_cpu: "{{ ansible_vmware_vm_create_host_num_cpus }}"
+      hotadd_memory: "{{ ansible_vmware_vm_create_host_hotadd_memory }}"
+      version: 13
+      scsi: paravirtual
+    networks:
+    - name: "{{ ansible_vmware_vm_create_network_name }}"
+      type: "{{ ansible_vmware_vm_create_network_type }}"
+      ip: "{{ ansible_vmware_vm_create_network_ip | default(omit) }}"
+      netmask: "{{ ansible_vmware_vm_create_network_netmask | default(omit) }}"
+      gateway: "{{ ansible_vmware_vm_create_network_gateway | default(omit) }}"
+      wait_for_ip_address: yes
+    customization:
+      hostname: "{{ ansible_vmware_vm_create_hostname }}"
+    #   joindomain: "{{ domain_name }}"
+    #   domainadmin: "{{ domain_admin_username }}"
+    #   domainadminpassword: "{{ domain_admin_password }}"
+    #   fullname: "Authorised User"
+      orgname: Mercedes-Benz Grand Prix Ltd
+    #   productid: "{{ windows_productid }}"
+    #   autologon: yes
+      dns_servers:
+      - "{{ ansible_vmware_vm_create_dns_server_primary }}"
+      - "{{ ansible_vmware_vm_create_dns_server_secondary }}"
+    #   domain: "{{domain_name}}"
+      password: "{{ ansible_vmware_vm_create_local_admin_password }}"
+      runonce:
+      - "{{ ansible_vmware_vm_create_runonce }}"
+  delegate_to: localhost
+  when: ansible_vmware_vm_create_network_type == "static"
+  register: deploystatic
+  notify: manage dns record
+
+- pause:
+    minutes: 2
+  when: deploydhcp.changed and ansible_vmware_vm_create_state == 'poweredon' or
+        deploystatic.changed and ansible_vmware_vm_create_state == 'poweredon'
+
+- name: get facts from created vm
+  vmware_guest_facts:
+    datacenter: "{{ ansible_vmware_vm_create_vcenter_datacenter }}"
+    hostname: "{{ ansible_vmware_vm_create_vcenter_fqdn }}"
+    username: "{{ ansible_vmware_vm_create_vcenter_username }}"
+    password: "{{ ansible_vmware_vm_create_vcenter_password }}"
+    validate_certs: false
+    folder: "{{ ansible_vmware_vm_create_folder }}"
+    name: "{{ ansible_vmware_vm_create_hostname }}"
+  when: ansible_vmware_vm_create_state == "poweredon"
+  register: instance_vm_facts
+  notify: create dns entry
+  delegate_to: localhost
+

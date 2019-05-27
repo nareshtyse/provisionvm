@@ -1,0 +1,5 @@
+---
+# vars file for creation of linux guests
+
+ansible_vmware_vm_create_runonce: ""
+ansible_vmware_vm_create_template: "centos-75-vmwaretools-template"

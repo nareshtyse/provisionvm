@@ -1,0 +1,4 @@
+---
+# vars file for creation of windows guests
+
+ansible_vmware_vm_create_runonce: "powershell.exe -ExecutionPolicy Unrestricted -File C:\\Windows\\Temp\\ConfigureRemotingForAnsible.ps1 -ForceNewSSLCert -EnableCredSSP"
